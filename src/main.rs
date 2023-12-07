@@ -93,3 +93,10 @@ fn convert_to_jsonline(mut file: File, save_file: File) -> io::Result<()> {
 
     Ok(())
 }
+
+fn write_line_in_file(buffer: &[u8], mut file: &File) -> () {
+    match file.write_all(&buffer){
+        Ok(_) => {},
+        Err(error) => {panic!("Algo ocurrio, {error}")},
+    }
+}
