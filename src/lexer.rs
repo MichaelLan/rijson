@@ -39,7 +39,11 @@ impl Lexer {
                 '}' => Token::RBrace,
                 ',' => Token::Comma,
                 ':' => Token::Colon,
-                'n' => self.read_null(),
+                'n' => self.read_keyword("null", Token::NullLiteral),
+                't' => self.read_keyword("true", Token::BooleanLiteral(true)),
+                'f' => self.read_keyword("false", Token::BooleanLiteral(false)),
+                'a'..='z' | 'A'..='Z' => self.read_identifier_from(self.position),
+                '0'..='9' => self.read_number(),
                 '"' => {
                     let text = self.read_string();
                     Token::StringLiteral(text)
@@ -63,12 +67,32 @@ impl Lexer {
         self.input.get(self.next_position).copied()
     }
 
+    fn read_number(&mut self) -> Token {
+        let start_position = self.position;
+        while let Some(c) = self.peek() {
+            if c.is_numeric() || c == '.' {
+                self.read_char();
+            } else {
+                break;
+            }
+        }
+        let end_position = self.position;
+        let identifier = self.input[start_position..=end_position]
+            .iter()
+            .collect::<String>();
+        Token::NumberLiteral(identifier.parse::<f32>().unwrap())
+    }
+
     fn read_string(&mut self) -> String {
         // TODO: obtener las comillas escapadas y no asumir que son el final del string
         self.read_char();
         let start_position = self.position;
-        while self.ch != Some('"') && self.ch.is_some() {
+        while self.ch != Some('"') {
             self.read_char();
+            if self.ch == Some('\\') && self.peek() == Some('"') {
+                self.read_char();
+                self.read_char();
+            }
         }
         let end_position = self.position;
         self.input[start_position..end_position]
@@ -76,22 +100,57 @@ impl Lexer {
             .collect::<String>()
     }
 
-    fn read_null(&mut self) -> Token {
-        // TODO: detect when the null is the last keyword, in other words, when the object finish
-        let start_position = self.position;
-        let mut end_position = self.position;
-        while (self.peek() != Some(',') || self.peek() != Some('}')) && self.ch.is_some() {
-            self.read_char();
-            end_position = self.position;
-            self.skip_whitespace();
+    fn read_char_is_matched(&mut self, expected: char) -> bool {
+        if let Some(c) = self.peek() {
+            if c == expected {
+                self.read_char();
+                return true;
+            }
         }
-        let keyword = self.input[start_position..end_position + 1]
+        false
+    }
+
+    fn read_identifier_from(&mut self, start_position: usize) -> Token {
+        while let Some(c) = self.peek() {
+            if c.is_alphanumeric() || c == '_' {
+                self.read_char();
+            } else {
+                break;
+            }
+        }
+
+        let identifier = self.input[start_position..=self.position]
             .iter()
             .collect::<String>();
-        if keyword == "null".to_string() {
-            return Token::NullLiteral;
+
+        Token::InvalidKeyword(identifier)
+    }
+
+    fn validate_keyword(&mut self, keyword: &str) -> bool {
+        for c in keyword[1..].chars() {
+            if !self.read_char_is_matched(c) {
+                return false;
+            }
         }
-        Token::InvalidKeyword(keyword)
+        true
+    }
+
+    fn read_keyword(&mut self, keyword: &str, token: Token) -> Token {
+        let start_position = self.position;
+
+        if self.validate_keyword(keyword) {
+            if let Some(next_char) = self.peek() {
+                if next_char.is_alphanumeric() || next_char == '_' {
+                    self.read_identifier_from(start_position)
+                } else {
+                    token
+                }
+            } else {
+                return token;
+            }
+        } else {
+            self.read_identifier_from(start_position)
+        }
     }
 
     fn skip_whitespace(&mut self) {
