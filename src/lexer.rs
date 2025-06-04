@@ -43,7 +43,7 @@ impl Lexer {
                 't' => self.read_keyword("true", Token::BooleanLiteral(true)),
                 'f' => self.read_keyword("false", Token::BooleanLiteral(false)),
                 'a'..='z' | 'A'..='Z' => self.read_identifier_from(self.position),
-                '0'..='9' => self.read_number(),
+                '0'..='9' | '-' => self.read_number(),
                 '"' => {
                     let text = self.read_string();
                     Token::StringLiteral(text)
@@ -70,34 +70,91 @@ impl Lexer {
     fn read_number(&mut self) -> Token {
         let start_position = self.position;
         while let Some(c) = self.peek() {
-            if c.is_numeric() || c == '.' {
+            if c.is_ascii_digit() {
                 self.read_char();
             } else {
                 break;
             }
         }
+
+        if self.peek() == Some('.') {
+            self.read_char();
+            // read the fractional part, if any.
+            while let Some(c) = self.peek() {
+                if c.is_ascii_digit() {
+                    self.read_char();
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // read the exponent, if any.
+        if self.peek() == Some('e') || self.peek() == Some('E') {
+            self.read_char();
+
+            if self.peek() == Some('+') || self.peek() == Some('-') {
+                self.read_char();
+            }
+
+            while let Some(c) = self.peek() {
+                if c.is_ascii_digit() {
+                    self.read_char();
+                } else {
+                    break;
+                }
+            }
+        }
+
         let end_position = self.position;
         let identifier = self.input[start_position..=end_position]
             .iter()
             .collect::<String>();
-        Token::NumberLiteral(identifier.parse::<f32>().unwrap())
+        // if identifier.split("e").collect::<String>().len() > 2 {
+        //     return Token::InvalidKeyword(identifier);
+        // } else if identifier.split(".").collect::<String>().len() > 2 {
+        //    return Token::InvalidKeyword(identifier);
+        // }
+        Token::NumberLiteral(identifier)
     }
 
     fn read_string(&mut self) -> String {
         // TODO: obtener las comillas escapadas y no asumir que son el final del string
         self.read_char();
-        let start_position = self.position;
-        while self.ch != Some('"') {
-            self.read_char();
-            if self.ch == Some('\\') && self.peek() == Some('"') {
-                self.read_char();
-                self.read_char();
+        let mut result = String::new();
+        // let start_position = self.position;
+
+        while let Some(c) = self.ch {
+            match c {
+                '"' => break,
+                '\\' => {
+                    self.read_char();
+                    match self.ch {
+                        Some('"') => result.push('"'),
+                        Some('\\') => result.push('\\'),
+                        Some('n') => result.push('\n'), // \n -> newline
+                        Some('t') => result.push('\t'), // \t -> tab
+                        Some('r') => result.push('\r'), // \r -> carriage return
+                        Some('f') => result.push('\u{000C}'), // \f -> form feed
+                        Some('b') => result.push('\u{0008}'), // \b -> backspace
+                        Some('/') => result.push('/'),  // \/ -> /
+                        Some(other) => {
+                            result.push('\\');
+                            result.push(other);
+                        }
+                        None => break,
+                    }
+                }
+                other => result.push(other),
             }
+            self.read_char();
         }
-        let end_position = self.position;
-        self.input[start_position..end_position]
-            .iter()
-            .collect::<String>()
+
+        // let end_position = self.position;
+        // self.input[start_position..end_position]
+        //     .iter()
+        //     .collect::<String>()
+        result
     }
 
     fn read_char_is_matched(&mut self, expected: char) -> bool {

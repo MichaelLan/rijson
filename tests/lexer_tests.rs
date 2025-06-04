@@ -95,7 +95,7 @@ fn test_string() {
         Token::Comma,
         Token::StringLiteral("false".to_string()),
         Token::Colon,
-        Token::StringLiteral("falsee\\\"a\\\" gol".to_string()),
+        Token::StringLiteral("falsee\"a\" gol".to_string()),
         Token::RBrace,
     ];
     let mut l = lexer::Lexer::new(input.chars().collect());
@@ -151,7 +151,7 @@ fn test_structure_without_numbers() {
         Token::Comma,
         Token::StringLiteral("test".to_string()),
         Token::Comma,
-        Token::StringLiteral("complex\\\"".to_string()),
+        Token::StringLiteral("complex\"".to_string()),
         Token::RSquare,
         Token::Comma,
         Token::StringLiteral("data".to_string()),
@@ -160,11 +160,11 @@ fn test_structure_without_numbers() {
         Token::Comma,
         Token::StringLiteral("description".to_string()),
         Token::Colon,
-        Token::StringLiteral("This is a string with \\\"quotes\\\" and\\nnewlines.".to_string()),
+        Token::StringLiteral("This is a string with \"quotes\" and\nnewlines.".to_string()),
         Token::Comma,
         Token::StringLiteral("path".to_string()),
         Token::Colon,
-        Token::StringLiteral("C:\\\\Users\\\\Test".to_string()),
+        Token::StringLiteral("C:\\Users\\Test".to_string()),
         Token::RBrace,
         Token::Comma,
         Token::StringLiteral("list".to_string()),
@@ -217,7 +217,9 @@ fn test_number() {
     let input = String::from(
         r#"
     {
-      "age": 1
+      "age": 1,
+      "fail": 1.212345678,
+      "number": -2e-10
     }
     "#,
     );
@@ -226,7 +228,15 @@ fn test_number() {
         Token::LBrace,
         Token::StringLiteral("age".to_string()),
         Token::Colon,
-        Token::NumberLiteral(1.0),
+        Token::NumberLiteral("1".to_string()),
+        Token::Comma,
+        Token::StringLiteral("fail".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("1.212345678".to_string()),
+        Token::Comma,
+        Token::StringLiteral("number".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("-2e-10".to_string()),
         Token::RBrace,
     ];
     let mut l = lexer::Lexer::new(input.chars().collect());
@@ -236,4 +246,181 @@ fn test_number() {
     }
     let eof = l.next_token();
     assert_eq!(eof, Token::EOF);
+}
+
+#[test]
+fn test_number_comprehensive() {
+    let input = String::from(
+        r#"
+    {
+        "integer": 42,
+        "negative": -17,
+        "zero": 0,
+        "decimal": 3.14159,
+        "negative_decimal": -2.718,
+        "scientific_positive": 1.23e4,
+        "scientific_negative": 2.5e-3,
+        "scientific_uppercase": 1E6,
+        "scientific_with_plus": 6.02e+23,
+        "very_small": 1e-100,
+        "very_large": 9.999e99,
+        "zero_decimal": 0.0,
+        "leading_zero_decimal": 0.123
+    }
+    "#,
+    );
+
+    let expected = vec![
+        Token::LBrace,
+        // "integer": 42
+        Token::StringLiteral("integer".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("42".to_string()),
+        Token::Comma,
+        // "negative": -17
+        Token::StringLiteral("negative".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("-17".to_string()),
+        Token::Comma,
+        // "zero": 0
+        Token::StringLiteral("zero".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("0".to_string()),
+        Token::Comma,
+        // "decimal": 3.14159
+        Token::StringLiteral("decimal".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("3.14159".to_string()),
+        Token::Comma,
+        // "negative_decimal": -2.718
+        Token::StringLiteral("negative_decimal".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("-2.718".to_string()),
+        Token::Comma,
+        // "scientific_positive": 1.23e4
+        Token::StringLiteral("scientific_positive".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("1.23e4".to_string()),
+        Token::Comma,
+        // "scientific_negative": 2.5e-3
+        Token::StringLiteral("scientific_negative".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("2.5e-3".to_string()),
+        Token::Comma,
+        // "scientific_uppercase": 1E6
+        Token::StringLiteral("scientific_uppercase".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("1E6".to_string()),
+        Token::Comma,
+        // "scientific_with_plus": 6.02e+23
+        Token::StringLiteral("scientific_with_plus".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("6.02e+23".to_string()),
+        Token::Comma,
+        // "very_small": 1e-100
+        Token::StringLiteral("very_small".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("1e-100".to_string()),
+        Token::Comma,
+        // "very_large": 9.999e99
+        Token::StringLiteral("very_large".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("9.999e99".to_string()),
+        Token::Comma,
+        // "zero_decimal": 0.0
+        Token::StringLiteral("zero_decimal".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("0.0".to_string()),
+        Token::Comma,
+        // "leading_zero_decimal": 0.123
+        Token::StringLiteral("leading_zero_decimal".to_string()),
+        Token::Colon,
+        Token::NumberLiteral("0.123".to_string()),
+        Token::RBrace,
+    ];
+
+    let mut l = lexer::Lexer::new(input.chars().collect());
+    for (i, expected_token) in expected.iter().enumerate() {
+        let tok = l.next_token();
+        assert_eq!(*expected_token, tok, "Token mismatch at position {}", i);
+    }
+
+    let eof = l.next_token();
+    assert_eq!(eof, Token::EOF);
+}
+
+#[test]
+fn test_number_edge_cases() {
+    // Array de números para probar casos específicos
+    let test_cases = vec![
+        ("0", "0"),
+        ("42", "42"),
+        ("-0", "-0"),
+        ("-42", "-42"),
+        ("3.14", "3.14"),
+        ("-3.14", "-3.14"),
+        ("1e10", "1e10"),
+        ("1E10", "1E10"),
+        ("1e+10", "1e+10"),
+        ("1e-10", "1e-10"),
+        ("1.5e10", "1.5e10"),
+        ("1.5E-10", "1.5E-10"),
+        ("0.1", "0.1"),
+        ("0.0", "0.0"),
+    ];
+
+    for (input, expected) in test_cases {
+        let mut lexer = lexer::Lexer::new(input.chars().collect());
+        let token = lexer.next_token();
+        assert_eq!(token, Token::NumberLiteral(expected.to_string()), 
+                    "Failed for input: {}", input);
+        
+        // Verificar que después viene EOF
+        let eof = lexer.next_token();
+        assert_eq!(eof, Token::EOF);
+    }
+}
+
+ #[test]
+fn test_numbers_in_array() {
+    let input = "[1, -2, 3.14, 1e10, -2.5e-3]";
+    let expected = vec![
+        Token::LSquare,
+        Token::NumberLiteral("1".to_string()),
+        Token::Comma,
+        Token::NumberLiteral("-2".to_string()),
+        Token::Comma,
+        Token::NumberLiteral("3.14".to_string()),
+        Token::Comma,
+        Token::NumberLiteral("1e10".to_string()),
+        Token::Comma,
+        Token::NumberLiteral("-2.5e-3".to_string()),
+        Token::RSquare,
+    ];
+
+    let mut lexer = lexer::Lexer::new(input.chars().collect());
+    for (i, expected_token) in expected.iter().enumerate() {
+        let tok = lexer.next_token();
+        assert_eq!(*expected_token, tok, "Token mismatch at position {}", i);
+    }
+}
+
+#[test]
+fn test_number_boundaries() {
+    let input = r#"{"count":42,"name":"test","active":true}"#;
+    let mut lexer = lexer::Lexer::new(input.chars().collect());
+    
+    assert_eq!(lexer.next_token(), Token::LBrace);
+    assert_eq!(lexer.next_token(), Token::StringLiteral("count".to_string()));
+    assert_eq!(lexer.next_token(), Token::Colon);
+    assert_eq!(lexer.next_token(), Token::NumberLiteral("42".to_string()));
+    assert_eq!(lexer.next_token(), Token::Comma);
+    assert_eq!(lexer.next_token(), Token::StringLiteral("name".to_string()));
+    assert_eq!(lexer.next_token(), Token::Colon);
+    assert_eq!(lexer.next_token(), Token::StringLiteral("test".to_string()));
+    assert_eq!(lexer.next_token(), Token::Comma);
+    assert_eq!(lexer.next_token(), Token::StringLiteral("active".to_string()));
+    assert_eq!(lexer.next_token(), Token::Colon);
+    assert_eq!(lexer.next_token(), Token::BooleanLiteral(true));
+    assert_eq!(lexer.next_token(), Token::RBrace);
 }

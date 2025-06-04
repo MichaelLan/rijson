@@ -10,7 +10,7 @@ pub enum Token {
 
     // Literals
     StringLiteral(String), // strings
-    NumberLiteral(f32),    // 1, 21.5, 2e10
+    NumberLiteral(String), // 1, 21.5, 2e10
     BooleanLiteral(bool),  // true, false
     NullLiteral,           // null
 
