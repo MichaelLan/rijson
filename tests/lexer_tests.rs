@@ -372,16 +372,20 @@ fn test_number_edge_cases() {
     for (input, expected) in test_cases {
         let mut lexer = lexer::Lexer::new(input.chars().collect());
         let token = lexer.next_token();
-        assert_eq!(token, Token::NumberLiteral(expected.to_string()), 
-                    "Failed for input: {}", input);
-        
+        assert_eq!(
+            token,
+            Token::NumberLiteral(expected.to_string()),
+            "Failed for input: {}",
+            input
+        );
+
         // Verificar que después viene EOF
         let eof = lexer.next_token();
         assert_eq!(eof, Token::EOF);
     }
 }
 
- #[test]
+#[test]
 fn test_numbers_in_array() {
     let input = "[1, -2, 3.14, 1e10, -2.5e-3]";
     let expected = vec![
@@ -409,9 +413,12 @@ fn test_numbers_in_array() {
 fn test_number_boundaries() {
     let input = r#"{"count":42,"name":"test","active":true}"#;
     let mut lexer = lexer::Lexer::new(input.chars().collect());
-    
+
     assert_eq!(lexer.next_token(), Token::LBrace);
-    assert_eq!(lexer.next_token(), Token::StringLiteral("count".to_string()));
+    assert_eq!(
+        lexer.next_token(),
+        Token::StringLiteral("count".to_string())
+    );
     assert_eq!(lexer.next_token(), Token::Colon);
     assert_eq!(lexer.next_token(), Token::NumberLiteral("42".to_string()));
     assert_eq!(lexer.next_token(), Token::Comma);
@@ -419,7 +426,10 @@ fn test_number_boundaries() {
     assert_eq!(lexer.next_token(), Token::Colon);
     assert_eq!(lexer.next_token(), Token::StringLiteral("test".to_string()));
     assert_eq!(lexer.next_token(), Token::Comma);
-    assert_eq!(lexer.next_token(), Token::StringLiteral("active".to_string()));
+    assert_eq!(
+        lexer.next_token(),
+        Token::StringLiteral("active".to_string())
+    );
     assert_eq!(lexer.next_token(), Token::Colon);
     assert_eq!(lexer.next_token(), Token::BooleanLiteral(true));
     assert_eq!(lexer.next_token(), Token::RBrace);

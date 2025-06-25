@@ -107,22 +107,13 @@ impl Lexer {
         }
 
         let end_position = self.position;
-        let identifier = self.input[start_position..=end_position]
-            .iter()
-            .collect::<String>();
-        // if identifier.split("e").collect::<String>().len() > 2 {
-        //     return Token::InvalidKeyword(identifier);
-        // } else if identifier.split(".").collect::<String>().len() > 2 {
-        //    return Token::InvalidKeyword(identifier);
-        // }
+        let identifier = self.input[start_position..=end_position].iter().collect();
         Token::NumberLiteral(identifier)
     }
 
     fn read_string(&mut self) -> String {
-        // TODO: obtener las comillas escapadas y no asumir que son el final del string
         self.read_char();
         let mut result = String::new();
-        // let start_position = self.position;
 
         while let Some(c) = self.ch {
             match c {
@@ -149,11 +140,6 @@ impl Lexer {
             }
             self.read_char();
         }
-
-        // let end_position = self.position;
-        // self.input[start_position..end_position]
-        //     .iter()
-        //     .collect::<String>()
         result
     }
 
@@ -203,7 +189,7 @@ impl Lexer {
                     token
                 }
             } else {
-                return token;
+                token
             }
         } else {
             self.read_identifier_from(start_position)
