@@ -14,6 +14,18 @@ pub struct Lexer {
     ch: Option<char>,
 }
 
+impl Iterator for Lexer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let token = self.next_token();
+        match token {
+            Token::EOF => None,
+            _ => Some(token),
+        }
+    }
+}
+
 impl Lexer {
     pub fn new(input: Vec<char>) -> Self {
         let mut l = Self {
@@ -63,7 +75,7 @@ impl Lexer {
         }
     }
 
-    fn peek(&self) -> Option<char> {
+    pub fn peek(&self) -> Option<char> {
         self.input.get(self.next_position).copied()
     }
 
