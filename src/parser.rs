@@ -76,7 +76,7 @@ impl Iterator for Parser {
                 }
                 _ => {
                     self.finished = true;
-                    return Some(Err("Expected array start".into()));
+                    return Some(Err("Expected array".into()));
                 }
             }
         }

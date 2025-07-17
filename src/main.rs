@@ -1,70 +1,30 @@
+use std::{env, fs, process};
+
 use rijson::parser::Parser;
 
 fn main() {
-    let input = String::from(
-        r#"[
-      {
-        "name": "Michael",
-        "age": 30,
-        "count": 1e-10
-      },
-      {
-        "name": "Kelly",
-        "age": 25,
-        "count": 1.10
-      },
+    let args: Vec<String> = env::args().collect();
 
-      {
-        "name": "John",
-        "age": 35,
-        "count": 1.0e+10
+    if args.len() < 2 {
+        eprintln!("Error: must provide a json file");
+        eprintln!("Use: {} <archivo.json>", args[0]);
+        process::exit(1);
+    }
 
-
-      },
-      {
-
-        "name": "Alice",
-        "age": 28,
-
-        "count": 1.0
-      },
-      {
-        "name": "Bob",
-        "age": 22,
-        "count": null,
-        "address": {
-          "city": "New York",
-          "zip": "10001"
-        },
-        "status": "pending"
-      },
-      {
-
-        "name": "Charlie",
-        "age": 40,
-        "count": 1.0e+5,
-
-
-        "address": {
-          "city": "Los Angeles",
-          "zip": "90001"
-
+    let file_path = &args[1];
+    let contents = match fs::read_to_string(file_path) {
+        Ok(content) => content,
+        Err(e) => {
+            eprintln!("Error leyendo el archivo '{}': {}", file_path, e);
+            process::exit(1);
         }
+    };
 
-      },
-      {
-        "name": "Diana",
-        "age": 32,
-        "count": 1.0e-3,
-        "address": {
-          "city": "Chicago",
-          "zip": "60601"
+    let p = Parser::new(contents.chars().collect());
+    for result in p {
+        match result {
+            Ok(json_value) => println!("{json_value}"),
+            Err(parse_error) => eprintln!("Error parsing JSON: {}", parse_error),
         }
-      }
-    ]"#,
-    );
-    let p = Parser::new(input.chars().collect());
-    for i in p {
-        println!("{}", i.unwrap())
     }
 }
